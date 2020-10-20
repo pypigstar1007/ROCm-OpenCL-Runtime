@@ -1,12 +1,15 @@
 /* Copyright (c) 2008-present Advanced Micro Devices, Inc.
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -1646,102 +1649,6 @@ RUNTIME_ENTRY_RET(cl_mem, clCreateImage2D,
                   (cl_context context, cl_mem_flags flags, const cl_image_format* image_format,
                    size_t image_width, size_t image_height, size_t image_row_pitch, void* host_ptr,
                    cl_int* errcode_ret)) {
-  if (!is_valid(context)) {
-    *not_null(errcode_ret) = CL_INVALID_CONTEXT;
-    LogWarning("invalid parameter \"context\"");
-    return (cl_mem)0;
-  }
-  // check flags for validity
-  if (!validateFlags(flags)) {
-    *not_null(errcode_ret) = CL_INVALID_VALUE;
-    LogWarning("invalid parameter \"flags\"");
-    return (cl_mem)0;
-  }
-  // check format
-  if (image_format == NULL) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_FORMAT_DESCRIPTOR;
-    LogWarning("invalid parameter \"image_format\"");
-    return (cl_mem)0;
-  }
-
-  const amd::Image::Format imageFormat(*image_format);
-  if (!imageFormat.isValid()) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_FORMAT_DESCRIPTOR;
-    LogWarning("invalid parameter \"image_format\"");
-    return (cl_mem)0;
-  }
-
-  amd::Context& amdContext = *as_amd(context);
-  if (!imageFormat.isSupported(amdContext)) {
-    *not_null(errcode_ret) = CL_IMAGE_FORMAT_NOT_SUPPORTED;
-    LogWarning("invalid parameter \"image_format\"");
-    return (cl_mem)0;
-  }
-  // check size parameters
-  if (image_width == 0 || image_height == 0) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-    LogWarning("invalid parameter \"image_width\" or \"image_height\"");
-    return (cl_mem)0;
-  }
-  const std::vector<amd::Device*>& devices = as_amd(context)->devices();
-  bool supportPass = false;
-  bool sizePass = false;
-  for (auto& dev : devices) {
-    if (dev->info().imageSupport_) {
-      supportPass = true;
-      if (dev->info().image2DMaxWidth_ >= image_width &&
-          dev->info().image2DMaxHeight_ >= image_height) {
-        sizePass = true;
-        break;
-      }
-    }
-  }
-  if (!supportPass) {
-    *not_null(errcode_ret) = CL_INVALID_OPERATION;
-    LogWarning("there are no devices in context to support images");
-    return (cl_mem)0;
-  }
-  if (!sizePass) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-    LogWarning("invalid parameter \"image_width\" or \"image_height\"");
-    return (cl_mem)0;
-  }
-  // check row pitch rules
-  if (host_ptr == NULL) {
-    if (image_row_pitch) {
-      *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-      LogWarning("invalid parameter \"image_row_pitch\"");
-      return (cl_mem)0;
-    }
-  } else if (image_row_pitch) {
-    size_t elemSize = imageFormat.getElementSize();
-    if ((image_row_pitch < image_width * elemSize) || (image_row_pitch % elemSize)) {
-      *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-      LogWarning("invalid parameter \"image_row_pitch\"");
-      return (cl_mem)0;
-    }
-  }
-  // check host_ptr consistency
-  if (host_ptr == NULL) {
-    if (flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)) {
-      *not_null(errcode_ret) = CL_INVALID_HOST_PTR;
-      LogWarning("invalid parameter \"host_ptr\"");
-      return (cl_mem)0;
-    }
-  } else {
-    if (!(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR))) {
-      *not_null(errcode_ret) = CL_INVALID_HOST_PTR;
-      LogWarning("invalid parameter \"host_ptr\"");
-      return (cl_mem)0;
-    }
-  }
-
-  // CL_IMAGE_FORMAT_NOT_SUPPORTED ???
-
-  if (image_row_pitch == 0) {
-    image_row_pitch = image_width * imageFormat.getElementSize();
-  }
-
   cl_image_desc image_desc = {};
   image_desc.image_type = CL_​MEM_​OBJECT_​IMAGE2D;
   image_desc.image_width = image_width;
@@ -1832,122 +1739,6 @@ RUNTIME_ENTRY_RET(cl_mem, clCreateImage3D,
                    size_t image_width, size_t image_height, size_t image_depth,
                    size_t image_row_pitch, size_t image_slice_pitch, void* host_ptr,
                    cl_int* errcode_ret)) {
-  if (!is_valid(context)) {
-    *not_null(errcode_ret) = CL_INVALID_CONTEXT;
-    LogWarning("invalid parameter \"context\"");
-    return (cl_mem)0;
-  }
-  // check flags for validity
-  if (!validateFlags(flags)) {
-    *not_null(errcode_ret) = CL_INVALID_VALUE;
-    LogWarning("invalid parameter \"flags\"");
-    return (cl_mem)0;
-  }
-  // check format
-  if (image_format == NULL) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_FORMAT_DESCRIPTOR;
-    LogWarning("invalid parameter \"image_format\"");
-    return (cl_mem)0;
-  }
-  amd::Image::Format imageFormat(*image_format);
-
-  if (!imageFormat.isValid()) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_FORMAT_DESCRIPTOR;
-    LogWarning("invalid parameter \"image_format\"");
-    return (cl_mem)0;
-  }
-
-  amd::Context& amdContext = *as_amd(context);
-  if (!imageFormat.isSupported(amdContext)) {
-    *not_null(errcode_ret) = CL_IMAGE_FORMAT_NOT_SUPPORTED;
-    LogWarning("invalid parameter \"image_format\"");
-    return (cl_mem)0;
-  }
-  // check size parameters
-  if (image_width == 0 || image_height == 0 || image_depth <= 1) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-    LogWarning("invalid size parameter(s)");
-    return (cl_mem)0;
-  }
-  const std::vector<amd::Device*>& devices = as_amd(context)->devices();
-  bool supportPass = false;
-  bool sizePass = false;
-  for (auto& dev : devices) {
-    if (dev->info().imageSupport_) {
-      supportPass = true;
-      if ((dev->info().image3DMaxWidth_ >= image_width) &&
-          (dev->info().image3DMaxHeight_ >= image_height) &&
-          (dev->info().image3DMaxDepth_ >= image_depth)) {
-        sizePass = true;
-        break;
-      }
-    }
-  }
-  if (!supportPass) {
-    *not_null(errcode_ret) = CL_INVALID_OPERATION;
-    LogWarning("there are no devices in context to support images");
-    return (cl_mem)0;
-  }
-  if (!sizePass) {
-    *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-    LogWarning("invalid size parameter(s)");
-    return (cl_mem)0;
-  }
-  // check row pitch rules
-  if (host_ptr == NULL) {
-    if (image_row_pitch) {
-      *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-      LogWarning("invalid parameter \"image_row_pitch\"");
-      return (cl_mem)0;
-    }
-  } else if (image_row_pitch) {
-    size_t elemSize = imageFormat.getElementSize();
-    if ((image_row_pitch < image_width * elemSize) || (image_row_pitch % elemSize)) {
-      *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-      LogWarning("invalid parameter \"image_row_pitch\"");
-      return (cl_mem)0;
-    }
-  }
-  // check slice pitch
-  if (host_ptr == NULL) {
-    if (image_slice_pitch) {
-      *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-      LogWarning("invalid parameter \"image_row_pitch\"");
-      return (cl_mem)0;
-    }
-  } else if (image_slice_pitch) {
-    size_t elemSize = imageFormat.getElementSize();
-    if ((image_slice_pitch < image_row_pitch * image_height) ||
-        (image_slice_pitch % image_row_pitch)) {
-      *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
-      LogWarning("invalid parameter \"image_row_pitch\"");
-      return (cl_mem)0;
-    }
-  }
-  // check host_ptr consistency
-  if (host_ptr == NULL) {
-    if (flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)) {
-      *not_null(errcode_ret) = CL_INVALID_HOST_PTR;
-      LogWarning("invalid parameter \"host_ptr\"");
-      return (cl_mem)0;
-    }
-  } else {
-    if (!(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR))) {
-      *not_null(errcode_ret) = CL_INVALID_HOST_PTR;
-      LogWarning("invalid parameter \"host_ptr\"");
-      return (cl_mem)0;
-    }
-  }
-
-  // CL_IMAGE_FORMAT_NOT_SUPPORTED ???
-
-  if (image_row_pitch == 0) {
-    image_row_pitch = image_width * imageFormat.getElementSize();
-  }
-  if (image_slice_pitch == 0) {
-    image_slice_pitch = image_row_pitch * image_height;
-  }
-
   cl_image_desc image_desc = {};
   image_desc.image_type = CL_​MEM_​OBJECT_​IMAGE3D;
   image_desc.image_width = image_width;
