@@ -1649,17 +1649,18 @@ RUNTIME_ENTRY_RET(cl_mem, clCreateImage2D,
                   (cl_context context, cl_mem_flags flags, const cl_image_format* image_format,
                    size_t image_width, size_t image_height, size_t image_row_pitch, void* host_ptr,
                    cl_int* errcode_ret)) {
-  cl_image_desc image_desc = {};
-  image_desc.image_type = CL_​MEM_​OBJECT_​IMAGE2D;
-  image_desc.image_width = image_width;
-  image_desc.image_height = image_height;
-  image_desc.image_depth = 1;
-  image_desc.image_array_size = 1;
-  image_desc.image_row_pitch = image_row_pitch;
-  image_desc.image_slice_pitch = 1;
-  image_desc.num_mip_levels = 0;
-  image_desc.num_samples = 0;
-  image_desc.mem_object = NULL;
+  cl_image_desc image_desc = {
+	  CL_​MEM_​OBJECT_​IMAGE2D,
+	  image_width,
+	  image_height,
+	  1,
+	  1,
+	  image_row_pitch,
+	  1,
+	  0,
+	  0,
+	  NULL
+  };
 
   return clCreateImage(context, flags, image_format, &image_desc, host_ptr, errcode_ret);
 }
@@ -1739,24 +1740,25 @@ RUNTIME_ENTRY_RET(cl_mem, clCreateImage3D,
                    size_t image_width, size_t image_height, size_t image_depth,
                    size_t image_row_pitch, size_t image_slice_pitch, void* host_ptr,
                    cl_int* errcode_ret)) {
-  // check depth
+  // check depth is not 1
   if (image_depth <= 1) {
     *not_null(errcode_ret) = CL_INVALID_IMAGE_SIZE;
     LogWarning("invalid size parameter(s)");
     return (cl_mem)0;
   }
 
-  cl_image_desc image_desc = {};
-  image_desc.image_type = CL_​MEM_​OBJECT_​IMAGE3D;
-  image_desc.image_width = image_width;
-  image_desc.image_height = image_height;
-  image_desc.image_depth = image_depth;
-  image_desc.image_array_size = 1;
-  image_desc.image_row_pitch = image_row_pitch;
-  image_desc.image_slice_pitch = image_slice_pitch;
-  image_desc.num_mip_levels = 0;
-  image_desc.num_samples = 0;
-  image_desc.mem_object = NULL;
+  cl_image_desc image_desc = {
+	  CL_​MEM_​OBJECT_​IMAGE3D,
+	  image_width,
+	  image_height,
+	  image_depth,
+	  1,
+	  image_row_pitch,
+	  image_slice_pitch,
+	  0,
+	  0,
+	  NULL
+  };
 
   return clCreateImage(context, flags, image_format, &image_desc, host_ptr, errcode_ret);
 }
