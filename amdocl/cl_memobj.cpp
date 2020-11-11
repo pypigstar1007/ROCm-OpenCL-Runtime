@@ -3712,6 +3712,13 @@ RUNTIME_ENTRY_RET(cl_mem, clCreateImage,
     LogWarning("invalid parameter: context");
     return (cl_mem)0;
   }
+  
+  if (image_desc == NULL) {
+    *not_null(errcode_ret) = CL_INVALID_IMAGE_DESCRIPTOR;
+    LogWarning("invalid parameter: image descriptor");
+    return (cl_mem)0;
+  }
+  
   // check flags for validity
   if (!validateFlags(flags)) {
     *not_null(errcode_ret) = CL_INVALID_VALUE;
