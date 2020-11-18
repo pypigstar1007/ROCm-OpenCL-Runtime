@@ -97,6 +97,15 @@ static bool validateFlags(cl_mem_flags flags, bool chkReadWrite = false) {
       (flags & (CL_MEM_USE_HOST_PTR | CL_MEM_ALLOC_HOST_PTR))) {
     return false;
   }
+  
+  cl_bitfield hostFlags = flags & (CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_WRITE_ONLY | CL_MEM_HOST_NO_ACCESS);
+  if (hostFlags &&
+        !(hostFlags == CL_MEM_HOST_READ_ONLY
+		|| hostFlags == CL_MEM_HOST_WRITE_ONLY
+		|| hostFlags == CL_MEM_HOST_NO_ACCESS))
+	{
+		return false;
+	}
 
   return true;
 }
